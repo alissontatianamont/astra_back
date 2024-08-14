@@ -36,7 +36,6 @@ class UsersController extends Controller
         } else {
             $originalName = null;
         }
-    
         $user = new User();
         $user->nombre_usuario = $request->nombre_usuario;
         $user->email = $request->email;
@@ -166,5 +165,10 @@ class UsersController extends Controller
                 "message" => "Usuario no encontrado."
             ], 404);
         }
+    }
+    public function getDrivers(){
+        $users = User::where('estado_eliminar', 1)->where('rol', 1)->get();
+        $usersArray = $users->toArray();
+        return response()->json($usersArray, 200);
     }
 }
