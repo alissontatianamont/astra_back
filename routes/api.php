@@ -4,6 +4,7 @@ use App\Http\Controllers\RoutesController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\CarriersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,5 +35,13 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::post('create_route', [RoutesController::class, 'store']);
     Route::post('update_route/{viaje_id}', [RoutesController::class, 'update']);
     Route::get('get_route/{viaje_id}', [RoutesController::class, 'show']);
+    Route::post('delete_route/{viaje_id}', [RoutesController::class, 'delete']);
+    //transportadoras
+    Route::get('carriers', [CarriersController::class, 'index']);
+    Route::post('create_carrier', [CarriersController::class, 'store']);
+    Route::get('get_carrier/{carrier_id}', [CarriersController::class, 'show']);
+    Route::post('update_carrier/{carrier_id}', [CarriersController::class, 'update']);
+    Route::post('delete_carrier/{carrier_id}', [CarriersController::class, 'delete']);
+
     
 });

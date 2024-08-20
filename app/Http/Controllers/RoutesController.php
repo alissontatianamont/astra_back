@@ -33,11 +33,11 @@ class RoutesController extends Controller
             $validatedData = $request->validate([
                 'fo_viaje_usuario' => 'required|integer',
                 'viaje_num_manifiesto' => 'required|string',
-                'viaje_fecha_manifiesto' => 'required|date',
+                'viaje_fecha_manifiesto' => 'required|string',
                 'viaje_placa' => 'required|string',
                 'viaje_destino_inicio' => 'required|string',
                 'viaje_destino_llegada' => 'required|string',
-                'viaje_fecha_inicio' => 'required|date',
+                'viaje_fecha_inicio' => 'required|string',
                 'viaje_km_salida' =>'nullable|string', 
                 'viaje_km_llegada' =>'nullable|string', 
                 'viaje_flete' => 'required|numeric',
@@ -63,6 +63,7 @@ class RoutesController extends Controller
             // die($originalName);
             $route = new RoutesModel();
             $route->fo_viaje_usuario = $validatedData['fo_viaje_usuario'];
+            $route->fo_viaje_transportadora = $request->fo_viaje_transportadora;
             $route->viaje_num_manifiesto = $validatedData['viaje_num_manifiesto'];
             $route->viaje_fecha_manifiesto = $fecha_manifiesto;
             $route->viaje_placa = $validatedData['viaje_placa'];
@@ -124,11 +125,11 @@ class RoutesController extends Controller
             $validatedData = $request->validate([
                 'fo_viaje_usuario' => 'required|integer',
                 'viaje_num_manifiesto' => 'required|string',
-                'viaje_fecha_manifiesto' => 'required|date',
+                'viaje_fecha_manifiesto' => 'required|string',
                 'viaje_placa' => 'required|string',
                 'viaje_destino_inicio' => 'required|string',
                 'viaje_destino_llegada' => 'required|string',
-                'viaje_fecha_inicio' => 'required|date',
+                'viaje_fecha_inicio' => 'required|string',
                 'viaje_km_salida' =>'nullable|string', 
                 'viaje_km_llegada' =>'nullable|string', 
                 'viaje_flete' => 'required|numeric',
@@ -150,6 +151,7 @@ class RoutesController extends Controller
             $fecha_manifiesto = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_manifiesto']))->format('Y-m-d');
             $fecha_inicio = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_inicio']))->format('Y-m-d');
             $route->fo_viaje_usuario = $validatedData['fo_viaje_usuario'];
+            $route->fo_viaje_transportadora = $request->fo_viaje_transportadora;
             $route->viaje_num_manifiesto = $validatedData['viaje_num_manifiesto'];
             $route->viaje_fecha_manifiesto = $fecha_manifiesto;
             $route->viaje_placa = $validatedData['viaje_placa'];
@@ -186,8 +188,21 @@ class RoutesController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function delete($viaje_id)
     {
-        //
+        $route = RoutesModel::find($viaje_id);
+        if ($route) {
+            // Actualizar el campo estado_eliminar a 0
+            $route->viaje_estatus = 0;
+            $route->save();
+            
+            return response()->json([
+                "message" => "Registro actualizado correctamente, viaje_estatus set a 0."
+            ]);
+        } else {
+            return response()->json([
+                "message" => "viaje  no encontrado."
+            ], 404);
+        }
     }
 }
