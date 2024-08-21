@@ -5,6 +5,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\CarriersController;
+use App\Http\Controllers\ExogenousController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +43,11 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('get_carrier/{carrier_id}', [CarriersController::class, 'show']);
     Route::post('update_carrier/{carrier_id}', [CarriersController::class, 'update']);
     Route::post('delete_carrier/{carrier_id}', [CarriersController::class, 'delete']);
-
+    // emrpesas info exogena
+    Route::get('exogenous', [ExogenousController::class, 'index']);
+    Route::get('get_exogenous/{exogenous_id}', [ExogenousController::class, 'show']);
+    Route::post('update_exogenous/{exogenous_id}', [ExogenousController::class, 'update']);
+    Route::post('create_exogenous', [ExogenousController::class, 'store']);
+    Route::post('delete_exogenous/{exogenous_id}', [ExogenousController::class, 'delete']);
     
 });
