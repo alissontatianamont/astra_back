@@ -37,6 +37,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('get_drivers', [UsersController::class,'getDrivers']);
     //rutas viajes
     Route::get('routes', [RoutesController::class, 'index']);
+    Route::get('get_routes_by_user/{usuario_id}', [RoutesController::class, 'getRoutesByUser']);
     Route::post('create_route', [RoutesController::class, 'store']);
     Route::post('update_route/{viaje_id}', [RoutesController::class, 'update']);
     Route::get('get_route/{viaje_id}', [RoutesController::class, 'show']);

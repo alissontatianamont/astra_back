@@ -25,7 +25,16 @@ class RoutesController extends Controller
             $routesArray = $routes->toArray();
             return response()->json($routesArray, 200);
     }
-
+    public function getRoutesByUser($usuario_id)
+    {
+        $routes = RoutesModel::where('viaje_estatus', 1)
+        ->where('fo_viaje_usuario', $usuario_id)
+        ->leftJoin('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
+        ->select('viajes.*', 'usuarios.nombre_usuario  as nombre_conductor')
+        ->get();
+        $routesArray = $routes->toArray();
+        return response()->json($routesArray, 200);
+    }
     /**
      * Store a newly created resource in storage.
      */
