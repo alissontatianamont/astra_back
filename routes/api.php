@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\CarriersController;
 use App\Http\Controllers\ExogenousController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\DashboardInformationController;
 use App\Http\Controllers\GeneralEgressController;
 
@@ -29,6 +30,7 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('logout', [UsersController::class,'logout']);
     Route::get('users', [UsersController::class,'index']);
     Route::post('users', [UsersController::class,'store']);
+    Route::post('update_profile/{usuario_id}', [UsersController::class,'updateProfile']);
     Route::post('users/{usuario_id}', [UsersController::class,'update']);
     Route::post('delete/{usuario_id}', [UsersController::class,'delete']);
     Route::get('users/{usuario_id}', [UsersController::class,'show']);
@@ -71,4 +73,10 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('get_count_routes_by_month', [DashboardInformationController::class, 'getCountRoutesByMonth']);
     Route::get('get_egress_by_month', [DashboardInformationController::class, 'getEgressByMonth']);
     Route::get('get_profits_by_month', [DashboardInformationController::class, 'getProfitsByMonth']);
+
+    //rutas reportes
+    Route::get('get_reports_name', [ReportsController::class, 'getReportsName']);
+    Route::get('get_report/{rep_id}/{date_start}/{date_end}', [ReportsController::class, 'getReport']);
+    Route::get('download_report/{rep_id}/{date_start}/{date_end}', [ReportsController::class, 'downloadReport']);
+    Route::get('download_exogenous_report', [ReportsController::class, 'downloadExogenousReport']);
 });

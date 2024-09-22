@@ -124,7 +124,39 @@ class UsersController extends Controller
             "message" => "Registro actualizado Correctamente !"
         ]);
     }
-
+    public function updateProfile(Request $request, string $usuario_id)
+    {
+        $users = User::find($usuario_id);
+    
+        // Verifica si el usuario existe
+        if (!$users) {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+    
+        // Manejo de la actualización de campos permitidos
+        $fieldsToUpdate = ['nombre_usuario', 'email', 'cedula', 'telefono'];
+    
+        foreach ($fieldsToUpdate as $field) {
+            if ($request->has($field)) {
+                $users->$field = $request->$field;
+            }
+        }
+    
+        // Validación de la contraseña
+        if ($request->has('password') && !empty($request->password)) {
+                $users->password = bcrypt($request->password);
+        }
+    
+        // Guardar cambios
+        $users->save();
+    
+        return response()->json([
+            "message" => "Registro actualizado correctamente!"
+        ]);
+    }
+    
+    
+    
 
     public function login(Request $request){
         if(!Auth::attempt($request->only('email','password'))){
