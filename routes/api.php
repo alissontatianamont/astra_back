@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\CarriersController;
 use App\Http\Controllers\ExogenousController;
+use App\Http\Controllers\DashboardInformationController;
+use App\Http\Controllers\GeneralEgressController;
 
 /*
 |--------------------------------------------------------------------------
@@ -46,8 +48,27 @@ Route::middleware(['auth:sanctum'])->group(function(){
     // emrpesas info exogena
     Route::get('exogenous', [ExogenousController::class, 'index']);
     Route::get('get_exogenous/{exogenous_id}', [ExogenousController::class, 'show']);
+    Route::get('get_exogenous_select', [ExogenousController::class, 'get_exogenous_select']);
     Route::post('update_exogenous/{exogenous_id}', [ExogenousController::class, 'update']);
     Route::post('create_exogenous', [ExogenousController::class, 'store']);
     Route::post('delete_exogenous/{exogenous_id}', [ExogenousController::class, 'delete']);
-    
+    // gastos viajes
+    Route::post('create_egress/{viaje_id}', [GeneralEgressController::class, 'store']);
+    Route::get('get_egress/{viaje_id}', [GeneralEgressController::class, 'show']);
+    Route::get('show_or_fetch_global_egress/{viaje_id}', [GeneralEgressController::class, 'showOrFetchGlobalEgress']);
+    Route::get('get_single_egress/{viaje_id}', [GeneralEgressController::class, 'getSingleEgress']);
+    Route::get('get_one_global_egress/{egress_id}', [GeneralEgressController::class, 'getOneGlobalEgress']);
+    Route::get('get_one_single_egress/{egress_id}', [GeneralEgressController::class, 'getOneSingleEgress']);
+    Route::post('update_egress/{viaje_id}', [GeneralEgressController::class, 'updateEgress']);
+    Route::delete('delete_single_egress/{viaje_id}/{egress_id}', [GeneralEgressController::class, 'deleteSingleEgress']);
+    Route::delete('delete_egress_item/{egress_id}', [GeneralEgressController::class, 'deleteEgressItem']);
+    Route::delete('delete_global_egress/{egress_id}', [GeneralEgressController::class, 'deleteGlobalEgress']);
+    // get file planilla
+    Route::get('download_spreadsheet/{filename}', [RoutesController::class, 'downloadSpreadsheet']);
+    Route::get('get_driver_name/{fo_viaje_usuario}', [RoutesController::class, 'getDriverName']);
+    Route::post('finish_route/{viaje_id}', [RoutesController::class, 'finishRoute']);
+    //mthods for dashboard
+    Route::get('get_count_routes_by_month', [DashboardInformationController::class, 'getCountRoutesByMonth']);
+    Route::get('get_egress_by_month', [DashboardInformationController::class, 'getEgressByMonth']);
+    Route::get('get_profits_by_month', [DashboardInformationController::class, 'getProfitsByMonth']);
 });

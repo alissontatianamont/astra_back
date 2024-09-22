@@ -16,6 +16,12 @@ class ExogenousController extends Controller
         $exogenousArray = $exogenous->toArray();
         return response()->json($exogenousArray, 200);
     }
+    public function get_exogenous_select()
+    {
+        $exogenous = ExogenousModel::where('exogena_estatus', 1)->select('exogena_id', 'exogena_nombre1','exogena_nombre2', 'exogena_apellido1', 'exogena_apellido2', 'exogena_razon_social')->get();
+        $exogenousArray = $exogenous->toArray();
+        return response()->json($exogenousArray, 200);
+    }
 
     /**
      * Store a newly created resource in storage.
@@ -38,11 +44,11 @@ class ExogenousController extends Controller
                 'exogena_estatus'=> 'required|integer',
             ]);
             $exogenous = new ExogenousModel();
-            $validatedData['exogena_nombre1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre1'] : null;
-            $validatedData['exogena_nombre2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre2'] :  null;
-            $validatedData['exogena_apellido1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido1']  : null;
-            $validatedData['exogena_apellido2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido2'] : null;
-            $validatedData['exogena_razon_social'] = ($validatedData['exogena_tipo'] == 1) ? $validatedData['exogena_razon_social'] : null;
+            $validatedData['exogena_nombre1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre1'] : '';
+            $validatedData['exogena_nombre2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre2'] :  '';
+            $validatedData['exogena_apellido1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido1']  : '';
+            $validatedData['exogena_apellido2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido2'] : '';
+            $validatedData['exogena_razon_social'] = ($validatedData['exogena_tipo'] == 1) ? $validatedData['exogena_razon_social'] : '';
             $exogenous->exogena_nit = $validatedData['exogena_nit'];
             $exogenous->exogena_dv = $validatedData['exogena_dv'];
             $exogenous->exogena_nombre1 = $validatedData['exogena_nombre1'];
@@ -106,11 +112,11 @@ class ExogenousController extends Controller
                 'exogena_tipo' => 'required|integer',
                 'exogena_estatus'=> 'required|integer',
             ]);
-            $validatedData['exogena_nombre1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre1'] : null;
-            $validatedData['exogena_nombre2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre2'] :  null;
-            $validatedData['exogena_apellido1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido1']  : null;
-            $validatedData['exogena_apellido2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido2'] : null;
-            $validatedData['exogena_razon_social'] = ($validatedData['exogena_tipo'] == 1) ? $validatedData['exogena_razon_social'] : null;
+            $validatedData['exogena_nombre1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre1'] : '';
+            $validatedData['exogena_nombre2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre2'] :  '';
+            $validatedData['exogena_apellido1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido1']  : '';
+            $validatedData['exogena_apellido2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido2'] : '';
+            $validatedData['exogena_razon_social'] = ($validatedData['exogena_tipo'] == 1) ? $validatedData['exogena_razon_social'] : '';
             $exogenous = ExogenousModel::find($exogenous_id);
             $exogenous->exogena_nit = $validatedData['exogena_nit'];
             $exogenous->exogena_dv = $validatedData['exogena_dv'];
