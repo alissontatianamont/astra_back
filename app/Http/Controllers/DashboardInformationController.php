@@ -10,27 +10,51 @@ use Illuminate\Http\Request;
 
 class DashboardInformationController extends Controller
 {
+
     public function getCountRoutesByMonth()
     {
-        $countByMonth = RoutesModel::selectRaw('MONTH(viaje_fecha_manifiesto) as month, COUNT(*) as count')
-            ->whereYear('viaje_fecha_manifiesto', now()->year) // Filtra por el año actual
-            ->groupBy('month')
-            ->orderBy('month')
-            ->get();
-    
-        // Asegurarte de que todos los meses del último año estén presentes
-        $result = [];
-        for ($i = 1; $i <= 12; $i++) {
-            $result[$i] = 0; // Inicializa todos los meses con 0
-        }
-    
-        foreach ($countByMonth as $data) {
-            $result[$data->month] = $data->count; // Asigna el conteo al mes correspondiente
-        }
-    
-        return response()->json($result);
+        $routeModel = new RoutesModel();
+        return $routeModel->getCountRoutesByMonth();
     }
+    //rol conductor
+    public function getCountRoutesByMonthUser($userId)
+{
+    $routeModel = new RoutesModel();
+    return $routeModel->getCountRoutesByMonthUser($userId);
+}
+
     public function getEgressByMonth()
+    {
+        $currentYear = date('Y');
+        $globalEgressModel = new GlobalEgressModel();
+        $globalEgresses = $globalEgressModel->filerGlobalEgressDashboard($currentYear);
+        $egressModel = new EgressModel();
+        $individualEgresses = $egressModel->filterIndividualEgress($currentYear);
+        // 3. Obtener el porcentaje del conductor por mes desde la tabla "viajes" del último año
+        $routeModel = new RoutesModel();
+        $driverPercentages = $routeModel->driverPercentage($currentYear);
+
+        $combinedEgresses = collect(range(1, 12))->mapWithKeys(function ($month) {
+            return [$month => 0];
+        });
+    
+
+        $globalEgresses->concat($individualEgresses)
+            ->groupBy('mes')
+            ->each(function ($monthEgresses, $mes) use (&$combinedEgresses) {
+                $combinedEgresses[$mes] += $monthEgresses->sum('total_egreso');
+            });
+ 
+        foreach ($driverPercentages as $percentage) {
+            $combinedEgresses[$percentage->mes] += $percentage->total_porcentaje_conductor;
+        }
+    
+        return response()->json($combinedEgresses);
+    }
+
+
+    //rol conductor 
+    public function getEgressByMonthUser($userId)
     {
         $currentYear = date('Y');
     
@@ -52,6 +76,7 @@ class DashboardInformationController extends Controller
             )
             ->whereNull('fo_egreso_gasto_global')
             ->whereYear('viajes.viaje_fecha_manifiesto', $currentYear)
+            ->where('viajes.fo_viaje_usuario', $userId) // Filtra por el ID de usuario
             ->groupBy(DB::raw('MONTH(viajes.viaje_fecha_manifiesto)'))
             ->get();
     
@@ -62,6 +87,7 @@ class DashboardInformationController extends Controller
                 DB::raw('SUM(viajes.viaje_porcentaje_conductor) as total_porcentaje_conductor')
             )
             ->whereYear('viajes.viaje_fecha_manifiesto', $currentYear)
+            ->where('viajes.fo_viaje_usuario', $userId) // Filtra por el ID de usuario
             ->groupBy(DB::raw('MONTH(viajes.viaje_fecha_manifiesto)'))
             ->get();
     
@@ -84,19 +110,15 @@ class DashboardInformationController extends Controller
     
         return response()->json($combinedEgresses);
     }
+    
+
     public function getProfitsByMonth()
     {
         $currentYear = now()->year;
     
         // Obtener las ganancias de la tabla "viajes" del último año, agrupadas por mes
-        $profitsByMonth = RoutesModel::select(
-            DB::raw('MONTH(viaje_fecha_manifiesto) as mes'),
-            DB::raw('SUM(viaje_total_ganancias) as total_ganancias')
-        )
-        ->whereYear('viaje_fecha_manifiesto', $currentYear)
-        ->groupBy(DB::raw('MONTH(viaje_fecha_manifiesto)'))
-        ->get();
-    
+        $routeModel = new RoutesModel();
+        $profitsByMonth = $routeModel->profitsByMonth($currentYear);
         // Si hay meses vacíos, rellenarlos con 0
         $profitsWithZeros = collect(range(1, 12))->mapWithKeys(function ($month) use ($profitsByMonth) {
             $profit = $profitsByMonth->firstWhere('mes', $month);
@@ -105,6 +127,24 @@ class DashboardInformationController extends Controller
     
         return response()->json($profitsWithZeros);
     }
+    //rol usuario
+    public function getProfitsByMonthUser($userId)
+{
+    $currentYear = now()->year;
+
+    // Obtener las ganancias de la tabla "viajes" del último año, agrupadas por mes
+    $routeModel = new RoutesModel();
+    $profitsByMonth = $routeModel->profitsByMonthUser($currentYear, $userId);
+
+    // Si hay meses vacíos, rellenarlos con 0
+    $profitsWithZeros = collect(range(1, 12))->mapWithKeys(function ($month) use ($profitsByMonth) {
+        $profit = $profitsByMonth->firstWhere('mes', $month);
+        return [$month => $profit ? $profit->total_ganancias : 0];
+    });
+
+    return response()->json($profitsWithZeros);
+}
+
     
     
     

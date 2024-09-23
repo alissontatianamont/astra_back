@@ -13,25 +13,24 @@ use Illuminate\Support\Facades\Auth;
 
 class RoutesController extends Controller
 {
+    protected $routeModel;
+    public function __construct() {
+        $this->routeModel = new RoutesModel();
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-            $routes = RoutesModel::where('viaje_estatus', 1)
-            ->leftJoin('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
-            ->select('viajes.*', 'usuarios.nombre_usuario  as nombre_conductor')
-            ->get();
+            $routes = $this->routeModel->getRoutes();
             $routesArray = $routes->toArray();
             return response()->json($routesArray, 200);
     }
+
+
     public function getRoutesByUser($usuario_id)
     {
-        $routes = RoutesModel::where('viaje_estatus', 1)
-        ->where('fo_viaje_usuario', $usuario_id)
-        ->leftJoin('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
-        ->select('viajes.*', 'usuarios.nombre_usuario  as nombre_conductor')
-        ->get();
+        $routes = $this->routeModel->getRoutesByUser($usuario_id);
         $routesArray = $routes->toArray();
         return response()->json($routesArray, 200);
     }
@@ -63,51 +62,22 @@ class RoutesController extends Controller
                  'viaje_estatus' => 'required|integer',
              ]);
      
-             // Convertir fechas al formato adecuado
-             $fecha_manifiesto = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_manifiesto']))->format('Y-m-d');
-             $fecha_inicio = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_inicio']))->format('Y-m-d');
-     
+             // Manejo del archivo
              $file = $request->file("viaje_planilla");
              $originalName = '';
      
              if ($file) {
-                 // Crear el nombre base del archivo
-                 $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . $fecha_manifiesto;
-     
-                 // Obtener la extensión del archivo
+                 $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . $validatedData['viaje_fecha_manifiesto'];
                  $extension = $file->guessExtension();
                  $originalName = $baseName . '.' . $extension;
-     
-                 // Mover el archivo a la carpeta "spreadsheets"
-                 $uploadPath = "spreadsheets"; // Directorio para guardar archivos
+                 $uploadPath = "spreadsheets";
                  $file->move($uploadPath, $originalName);
              } else {
                  $originalName = null;
              }
      
-             // Guardar los datos en la base de datos
-             $route = new RoutesModel();
-             $route->fo_viaje_usuario = $validatedData['fo_viaje_usuario'];
-             $route->fo_viaje_transportadora = $request->fo_viaje_transportadora;
-             $route->viaje_num_manifiesto = $validatedData['viaje_num_manifiesto'];
-             $route->viaje_fecha_manifiesto = $fecha_manifiesto;
-             $route->viaje_placa = $validatedData['viaje_placa'];
-             $route->viaje_destino_inicio = $validatedData['viaje_destino_inicio'];
-             $route->viaje_destino_llegada = $validatedData['viaje_destino_llegada'];
-             $route->viaje_fecha_inicio = $fecha_inicio;
-             $route->viaje_km_salida = $validatedData['viaje_km_salida'];
-             $route->viaje_km_llegada = $validatedData['viaje_km_llegada'];
-             $route->viaje_planilla = $originalName;
-             $route->viaje_flete = $validatedData['viaje_flete'];
-             $route->viaje_anticipo = $validatedData['viaje_anticipo'];
-             $route->viaje_sobrecosto = $validatedData['viaje_sobrecosto'];
-             $route->viaje_neto_pago = $validatedData['viaje_neto_pago'];
-             $route->viaje_porcentaje_conductor = $validatedData['viaje_porcentaje_conductor'];
-             $route->viaje_total_gastos = $validatedData['viaje_porcentaje_conductor']; // depende de una operación
-             $route->viaje_total_ganancias = ($validatedData['viaje_neto_pago'] + $validatedData['viaje_sobrecosto']) - $validatedData['viaje_porcentaje_conductor'];
-             $route->viaje_estatus = $validatedData['viaje_estatus'];
-             $route->viaje_observaciones = $validatedData['viaje_observaciones'];
-             $route->save();
+             // Llamar a la función del modelo para guardar los datos
+             $route = $this->routeModel->saveRoute($validatedData, $originalName, $request->fo_viaje_transportadora);
      
              return response()->json([
                  'estatus_guardado' => 1,
@@ -122,6 +92,9 @@ class RoutesController extends Controller
          }
      }
      
+
+     
+     
      
      
     
@@ -129,9 +102,9 @@ class RoutesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show( $viaje_id)
+    public function show($viaje_id)
     {
-        $route =  RoutesModel::find($viaje_id);
+        $route =  $this->routeModel->getRoute($viaje_id);
         if (!empty($route)) {
             return response()->json($route, 200);
         } else {
@@ -168,7 +141,7 @@ class RoutesController extends Controller
             ]);
     
             // Encontrar el registro
-            $route = RoutesModel::find($viaje_id);
+            $route = $this->routeModel->getRoute($viaje_id);
             if (!$route) {
                 return response()->json([
                     'estatus_update' => 0,
@@ -176,7 +149,8 @@ class RoutesController extends Controller
                 ], 404);
             }
     
-            // Verificar si se ha subido un nuevo archivo
+            // Manejo del archivo
+            $originalName = null;
             if ($request->hasFile('viaje_planilla')) {
                 $file = $request->file('viaje_planilla');
     
@@ -187,7 +161,7 @@ class RoutesController extends Controller
                 // Definir la carpeta de almacenamiento "spreadsheets"
                 $uploadPath = "spreadsheets";
                 if (str_starts_with($mimeType, 'image')) {
-                    $extension = $file->guessExtension(); // Obtener la extensión
+                    $extension = $file->guessExtension();
                     $originalName = $baseName . '.' . $extension;
                 } elseif ($mimeType === 'application/pdf') {
                     $originalName = $baseName . '.pdf';
@@ -208,34 +182,10 @@ class RoutesController extends Controller
     
                 // Mover el nuevo archivo a la carpeta "spreadsheets"
                 $file->move($uploadPath, $originalName);
-                $route->viaje_planilla = $originalName;
             }
     
-            // Formatear las fechas
-            $fecha_manifiesto = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_manifiesto']))->format('Y-m-d');
-            $fecha_inicio = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_inicio']))->format('Y-m-d');
-    
-            // Actualizar el resto de los datos
-            $route->fo_viaje_usuario = $validatedData['fo_viaje_usuario'];
-            $route->fo_viaje_transportadora = $request->fo_viaje_transportadora;
-            $route->viaje_num_manifiesto = $validatedData['viaje_num_manifiesto'];
-            $route->viaje_fecha_manifiesto = $fecha_manifiesto;
-            $route->viaje_placa = $validatedData['viaje_placa'];
-            $route->viaje_destino_inicio = $validatedData['viaje_destino_inicio'];
-            $route->viaje_destino_llegada = $validatedData['viaje_destino_llegada'];
-            $route->viaje_fecha_inicio = $fecha_inicio;
-            $route->viaje_km_salida = $validatedData['viaje_km_salida'];
-            $route->viaje_km_llegada = $validatedData['viaje_km_llegada'];
-            $route->viaje_flete = $validatedData['viaje_flete'];
-            $route->viaje_anticipo = $validatedData['viaje_anticipo'];
-            $route->viaje_sobrecosto = $validatedData['viaje_sobrecosto'];
-            $route->viaje_neto_pago = $validatedData['viaje_neto_pago'];
-            $route->viaje_porcentaje_conductor = $validatedData['viaje_porcentaje_conductor'];
-            $route->viaje_total_gastos = $validatedData['viaje_porcentaje_conductor'];
-            $route->viaje_total_ganancias = ($validatedData['viaje_neto_pago'] + $validatedData['viaje_sobrecosto']) - $validatedData['viaje_porcentaje_conductor']; // depende de una operación
-            $route->viaje_estatus = $validatedData['viaje_estatus'];
-            $route->viaje_observaciones = $validatedData['viaje_observaciones'];
-            $route->save();
+            // Llamar a la función del modelo para actualizar los datos
+            $this->routeModel->updateRoute($validatedData, $originalName, $request->fo_viaje_transportadora);
     
             return response()->json([
                 'estatus_update' => 1,
@@ -251,6 +201,7 @@ class RoutesController extends Controller
     }
     
     
+    
 
     /**
      * Remove the specified resource from storage.
@@ -258,7 +209,7 @@ class RoutesController extends Controller
     public function delete($viaje_id)
     {
         // Buscar el viaje
-        $route = RoutesModel::find($viaje_id);
+        $route = $this->routeModel->getRoute($viaje_id);
     
         // Buscar los gastos asociados (individuales y globales)
         $globalEgress = GlobalEgressModel::where('fo_gasto_g_viaje', $viaje_id)->get();
@@ -322,10 +273,7 @@ class RoutesController extends Controller
     }
     public function getDriverName($fo_viaje_usuario)
     {
-        $driver = RoutesModel::where('fo_viaje_usuario', $fo_viaje_usuario)
-        ->join('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
-        ->select('usuarios.nombre_usuario as viaje_conductor')
-        ->first();
+       $driver = $this->routeModel->getDriverName($fo_viaje_usuario);
     
         $driverName = $driver->viaje_conductor;
         return response()->json($driverName, 200);
@@ -333,7 +281,7 @@ class RoutesController extends Controller
 
     public function finishRoute($viaje_id)
     {
-        $route = RoutesModel::find($viaje_id);
+        $route =  $this->routeModel->getRoute($viaje_id);
         if ($route) {
             $route->viaje_fecha_llegada = Carbon::now();
             $route->save();

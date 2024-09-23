@@ -74,6 +74,9 @@ Route::middleware(['auth:sanctum'])->group(function(){
     Route::get('get_count_routes_by_month', [DashboardInformationController::class, 'getCountRoutesByMonth']);
     Route::get('get_egress_by_month', [DashboardInformationController::class, 'getEgressByMonth']);
     Route::get('get_profits_by_month', [DashboardInformationController::class, 'getProfitsByMonth']);
+    Route::get('get_profits_by_month_user/{userId}', [DashboardInformationController::class, 'getProfitsByMonthUser']);
+    Route::get('get_egress_by_month_user/{userId}', [DashboardInformationController::class, 'getEgressByMonthUser']);
+    Route::get('get_count_routes_by_month_user/{userId}', [DashboardInformationController::class, 'getCountRoutesByMonthUser']);
 
     //rutas reportes
     Route::get('get_reports_name', [ReportsController::class, 'getReportsName']);
