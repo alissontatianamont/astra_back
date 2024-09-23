@@ -29,18 +29,18 @@ class RoutesModel extends Model
     public function getRoutes()
     {
         $routes = RoutesModel::where('viaje_estatus', 1)
-        ->leftJoin('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
-        ->select('viajes.*', 'usuarios.nombre_usuario  as nombre_conductor')
-        ->get();
+            ->leftJoin('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
+            ->select('viajes.*', 'usuarios.nombre_usuario  as nombre_conductor')
+            ->get();
         return $routes;
     }
     public function getRoutesByUser($usuario_id)
     {
         $routes = RoutesModel::where('viaje_estatus', 1)
-        ->where('fo_viaje_usuario', $usuario_id)
-        ->leftJoin('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
-        ->select('viajes.*', 'usuarios.nombre_usuario  as nombre_conductor')
-        ->get();
+            ->where('fo_viaje_usuario', $usuario_id)
+            ->leftJoin('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
+            ->select('viajes.*', 'usuarios.nombre_usuario  as nombre_conductor')
+            ->get();
         return $routes;
     }
 
@@ -53,9 +53,9 @@ class RoutesModel extends Model
     public function getDriverName($fo_viaje_usuario)
     {
         $driver = RoutesModel::where('fo_viaje_usuario', $fo_viaje_usuario)
-        ->join('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
-        ->select('usuarios.nombre_usuario as viaje_conductor')
-        ->first();
+            ->join('usuarios', 'viajes.fo_viaje_usuario', '=', 'usuarios.usuario_id')
+            ->select('usuarios.nombre_usuario as viaje_conductor')
+            ->first();
         return $driver;
     }
 
@@ -99,13 +99,13 @@ class RoutesModel extends Model
     public function driverPercentage($currentYear)
     {
         $driverPercentages = DB::table('viajes')
-        ->select(
-            DB::raw('MONTH(viajes.viaje_fecha_manifiesto) as mes'),
-            DB::raw('SUM(viajes.viaje_porcentaje_conductor) as total_porcentaje_conductor')
-        )
-        ->whereYear('viajes.viaje_fecha_manifiesto', $currentYear)
-        ->groupBy(DB::raw('MONTH(viajes.viaje_fecha_manifiesto)'))
-        ->get();
+            ->select(
+                DB::raw('MONTH(viajes.viaje_fecha_manifiesto) as mes'),
+                DB::raw('SUM(viajes.viaje_porcentaje_conductor) as total_porcentaje_conductor')
+            )
+            ->whereYear('viajes.viaje_fecha_manifiesto', $currentYear)
+            ->groupBy(DB::raw('MONTH(viajes.viaje_fecha_manifiesto)'))
+            ->get();
         return $driverPercentages;
     }
 
@@ -116,9 +116,9 @@ class RoutesModel extends Model
             DB::raw('MONTH(viaje_fecha_manifiesto) as mes'),
             DB::raw('SUM(viaje_total_ganancias) as total_ganancias')
         )
-        ->whereYear('viaje_fecha_manifiesto', $currentYear)
-        ->groupBy(DB::raw('MONTH(viaje_fecha_manifiesto)'))
-        ->get();
+            ->whereYear('viaje_fecha_manifiesto', $currentYear)
+            ->groupBy(DB::raw('MONTH(viaje_fecha_manifiesto)'))
+            ->get();
         return $profitsByMonth;
     }
 
@@ -128,14 +128,15 @@ class RoutesModel extends Model
             DB::raw('MONTH(viaje_fecha_manifiesto) as mes'),
             DB::raw('SUM(viaje_total_ganancias) as total_ganancias')
         )
-        ->whereYear('viaje_fecha_manifiesto', $currentYear)
-        ->where('fo_viaje_usuario', $userId) // Filtra por el ID de usuario
-        ->groupBy(DB::raw('MONTH(viaje_fecha_manifiesto)'))
-        ->get();
+            ->whereYear('viaje_fecha_manifiesto', $currentYear)
+            ->where('fo_viaje_usuario', $userId) // Filtra por el ID de usuario
+            ->groupBy(DB::raw('MONTH(viaje_fecha_manifiesto)'))
+            ->get();
         return $profitsByMonth;
     }
 
-    public function saveRoute($validatedData, $originalName, $fo_viaje_transportadora) {
+    public function saveRoute($validatedData, $originalName, $fo_viaje_transportadora)
+    {
         // Convertir las fechas al formato adecuado
         $fecha_manifiesto = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_manifiesto']))->format('Y-m-d');
         $fecha_inicio = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_inicio']))->format('Y-m-d');
@@ -165,7 +166,8 @@ class RoutesModel extends Model
         // Guardar el modelo en la base de datos
         $this->save();
     }
-    public function updateRoute($validatedData, $originalName = null, $fo_viaje_transportadora) {
+    public function updateRoute($validatedData, $originalName = null, $fo_viaje_transportadora)
+    {
         // Convertir las fechas al formato adecuado
         $fecha_manifiesto = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_manifiesto']))->format('Y-m-d');
         $fecha_inicio = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_inicio']))->format('Y-m-d');
@@ -199,4 +201,54 @@ class RoutesModel extends Model
         // Guardar los cambios en la base de datos
         $this->save();
     }
+
+    public function updateDataRoute($viaje_id, $validatedData)
+    {
+        $route =  $this->find($viaje_id);
+        $route->viaje_total_gastos = $route->viaje_total_gastos + $validatedData['egreso_valor'];
+        $route->viaje_total_ganancias = $route->viaje_total_ganancias - $validatedData['egreso_valor'];
+        $route->save();
+    }
+
+    public function updateRouteTotals($viaje_id, $old_value_egress, $new_value_egress)
+    {
+        $route = $this->find($viaje_id);
+
+        $route->viaje_total_ganancias = ($route->viaje_total_ganancias + $old_value_egress) - $new_value_egress;
+        $route->viaje_total_gastos = ($route->viaje_total_gastos - $old_value_egress) + $new_value_egress;
+
+        $route->save();
+    }
+
+    public function updateRouteAfterEgressDeletion($viaje_id, $old_value_egress)
+    {
+        $route = $this->find($viaje_id);
+        if ($route) {
+            $route->viaje_total_gastos -= $old_value_egress;
+            $route->viaje_total_ganancias += $old_value_egress;
+            $route->save();
+        }
+    }
+
+public function updateRouteAfterEgressItemDeletion($viaje_id, $old_value_egress)
+{
+    $route = $this->find($viaje_id);
+    if ($route) {
+        $route->viaje_total_gastos -= $old_value_egress;
+        $route->viaje_total_ganancias += $old_value_egress;
+        $route->save();
+    }
+}
+public function updateRouteAfterGlobalEgressDeletion($viaje_id, $gasto_valor)
+{
+    $route = $this->find($viaje_id);
+    if ($route) {
+        $route->viaje_total_gastos -= $gasto_valor;
+        $route->viaje_total_ganancias += $gasto_valor;
+        $route->save();
+    }
+}
+
+
+
 }

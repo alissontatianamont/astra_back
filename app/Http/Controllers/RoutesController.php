@@ -296,6 +296,5 @@ class RoutesController extends Controller
     }
     
     
-    
      
 }
