@@ -7,20 +7,20 @@ use App\Models\ExogenousModel;
 use Illuminate\Validation\ValidationException;
 class ExogenousController extends Controller
 {
+    protected $exogenousModel;
+    public function __construct() {
+        $this->exogenousModel = new ExogenousModel();
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        $exogenous = ExogenousModel::where('exogena_estatus', 1)->get();
-        $exogenousArray = $exogenous->toArray();
-        return response()->json($exogenousArray, 200);
+        return $this->exogenousModel->getExogenous();
     }
     public function get_exogenous_select()
     {
-        $exogenous = ExogenousModel::where('exogena_estatus', 1)->select('exogena_id', 'exogena_nombre1','exogena_nombre2', 'exogena_apellido1', 'exogena_apellido2', 'exogena_razon_social')->get();
-        $exogenousArray = $exogenous->toArray();
-        return response()->json($exogenousArray, 200);
+            return $this->exogenousModel->getExogenousSelect();
     }
 
     /**
@@ -43,25 +43,17 @@ class ExogenousController extends Controller
                 'exogena_tipo' => 'required|integer',
                 'exogena_estatus'=> 'required|integer',
             ]);
-            $exogenous = new ExogenousModel();
+    
+            // Ajustes según tipo de exógena
             $validatedData['exogena_nombre1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre1'] : '';
             $validatedData['exogena_nombre2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre2'] :  '';
             $validatedData['exogena_apellido1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido1']  : '';
             $validatedData['exogena_apellido2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido2'] : '';
             $validatedData['exogena_razon_social'] = ($validatedData['exogena_tipo'] == 1) ? $validatedData['exogena_razon_social'] : '';
-            $exogenous->exogena_nit = $validatedData['exogena_nit'];
-            $exogenous->exogena_dv = $validatedData['exogena_dv'];
-            $exogenous->exogena_nombre1 = $validatedData['exogena_nombre1'];
-            $exogenous->exogena_nombre2 = $validatedData['exogena_nombre2'];
-            $exogenous->exogena_apellido1 = $validatedData['exogena_apellido1'];
-            $exogenous->exogena_apellido2 = $validatedData['exogena_apellido2'];
-            $exogenous->exogena_razon_social = $validatedData['exogena_razon_social'];
-            $exogenous->exogena_direccion = $validatedData['exogena_direccion'];
-            $exogenous->exogena_ciudad = $validatedData['exogena_ciudad'];
-            $exogenous->exogena_departamento = $validatedData['exogena_departamento'];
-            $exogenous->exogena_tipo = $validatedData['exogena_tipo'];
-            $exogenous->exogena_estatus = $validatedData['exogena_estatus'];
-            $exogenous->save();
+    
+            // Mover lógica de guardado al modelo
+            $this->exogenousModel->saveExogenous($validatedData);
+    
             return response()->json([
                 'estatus_guardado' => 1,
                 'mensaje' => 'Datos guardados correctamente. :)'
@@ -73,9 +65,8 @@ class ExogenousController extends Controller
                 'error' => $e->getMessage()
             ], 422);
         }
-
-        
     }
+    
 
     /**
      * Display the specified resource.
@@ -112,25 +103,17 @@ class ExogenousController extends Controller
                 'exogena_tipo' => 'required|integer',
                 'exogena_estatus'=> 'required|integer',
             ]);
+    
+            // Ajustes según tipo de exógena
             $validatedData['exogena_nombre1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre1'] : '';
             $validatedData['exogena_nombre2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_nombre2'] :  '';
             $validatedData['exogena_apellido1'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido1']  : '';
             $validatedData['exogena_apellido2'] = ($validatedData['exogena_tipo'] == 2) ? $validatedData['exogena_apellido2'] : '';
             $validatedData['exogena_razon_social'] = ($validatedData['exogena_tipo'] == 1) ? $validatedData['exogena_razon_social'] : '';
-            $exogenous = ExogenousModel::find($exogenous_id);
-            $exogenous->exogena_nit = $validatedData['exogena_nit'];
-            $exogenous->exogena_dv = $validatedData['exogena_dv'];
-            $exogenous->exogena_nombre1 = $validatedData['exogena_nombre1'];
-            $exogenous->exogena_nombre2 = $validatedData['exogena_nombre2'];
-            $exogenous->exogena_apellido1 = $validatedData['exogena_apellido1'];
-            $exogenous->exogena_apellido2 = $validatedData['exogena_apellido2'];
-            $exogenous->exogena_razon_social = $validatedData['exogena_razon_social'];
-            $exogenous->exogena_direccion = $validatedData['exogena_direccion'];
-            $exogenous->exogena_ciudad = $validatedData['exogena_ciudad'];
-            $exogenous->exogena_departamento = $validatedData['exogena_departamento'];
-            $exogenous->exogena_tipo = $validatedData['exogena_tipo'];
-            $exogenous->exogena_estatus = $validatedData['exogena_estatus'];
-            $exogenous->save();
+    
+            // Mover lógica de actualización al modelo
+            $this->exogenousModel->updateExogenous($exogenous_id, $validatedData);
+    
             return response()->json([
                 'estatus_guardado' => 1,
                 'mensaje' => 'Datos actualizados correctamente. :)'
@@ -143,17 +126,18 @@ class ExogenousController extends Controller
             ], 422);
         }
     }
+    
 
     /**
      * Remove the specified resource from storage.
      */
     public function delete($exogenous_id)
     {
-        $route = ExogenousModel::find($exogenous_id);
-        if ($route) {
+        $exogenous = $this->exogenousModel->getExogenousById($exogenous_id);
+        if ($exogenous) {
             // Actualizar el campo estado_eliminar a 0
-            $route->exogena_estatus = 0;
-            $route->save();
+            $exogenous->exogena_estatus = 0;
+            $exogenous->save();
             
             return response()->json([
                 "message" => "Registro eliminado exitosamente."
