@@ -17,4 +17,24 @@ class ReportsModel extends Model
         'rep_status',
         'rep_fecha_creacion'
     ];
+
+    public function getReportsName()
+    {
+        $reportsName = $this->select('rep_id', 'rep_nombre')->where('rep_status', 1)->get();
+        return response()->json($reportsName);
+    }
+    public function getReport($rep_id){
+        $report = $this->select('rep_nombre', 'rep_sql')
+        ->where('rep_id', $rep_id)
+        ->first();
+        return $report;
+    }
+
+    public function getExogenousReport()
+    {
+        $report = $this->select('rep_nombre', 'rep_sql')
+        ->where('rep_id', 2)
+        ->first();
+        return $report;
+    }
 }

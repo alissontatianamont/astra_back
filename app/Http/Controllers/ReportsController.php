@@ -9,20 +9,20 @@ use App\Exports\ReportExport;
 
 class ReportsController extends Controller
 {
+    protected $reportsModel;
+    public function __construct() {
+        $this->reportsModel = new ReportsModel();
+    }
     /**
      * Display a listing of the resource.
      */
     public function getReportsName()
     {
-        $reportsName = ReportsModel::select('rep_id', 'rep_nombre')->where('rep_status', 1)->get();
-        return response()->json($reportsName);
+        return $this->reportsModel->getReportsName();
     }
     public function getReport($rep_id, $date_start, $date_end)
     {
-        // Recuperar el nombre y la SQL del reporte
-        $report = ReportsModel::select('rep_nombre', 'rep_sql')
-            ->where('rep_id', $rep_id)
-            ->first();
+        $report = $this->reportsModel->getReport($rep_id);
 
         // Verificar si el reporte existe
         if (!$report) {
@@ -43,12 +43,12 @@ class ReportsController extends Controller
             return response()->json(['error' => 'Fechas no encontradas', 'status_request' => 0],);
         }
     }
+
+
     public function getReportDownload($rep_id, $date_start, $date_end)
     {
         // Recuperar el nombre y la SQL del reporte
-        $report = ReportsModel::select('rep_nombre', 'rep_sql')
-            ->where('rep_id', $rep_id)
-            ->first();
+        $report = $this->reportsModel->getReport($rep_id);
 
         // Verificar si el reporte existe
         if (!$report) {
@@ -89,7 +89,7 @@ class ReportsController extends Controller
         $headings = array_keys((array)$data[0]); // Suponiendo que hay al menos un elemento en $data
     
         // Recuperar el nombre del reporte
-        $reportName = ReportsModel::select('rep_nombre')
+        $reportName = $this->reportsModel->select('rep_nombre')
             ->where('rep_id', $rep_id)
             ->first();
     
@@ -100,9 +100,7 @@ class ReportsController extends Controller
     public function downloadExogenousReport()
     {
         // Recuperar el reporte específico con ID 2
-        $report = ReportsModel::select('rep_nombre', 'rep_sql')
-            ->where('rep_id', 2)
-            ->first();
+        $report = $this->reportsModel->getExogenousReport();
     
         if (!$report) {
             return response()->json(['error' => 'Reporte no encontrado'], 404);
