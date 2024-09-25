@@ -10,15 +10,19 @@ use Illuminate\Support\Facades\Response;
 
 class UsersController extends Controller
 {
+
+    protected $usersModel;
+
+    public function __construct() {
+        $this->usersModel = new User();
+    }
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
 
-        $users = User::where('estado_eliminar', 1)->get();
-        $usersArray = $users->toArray();
-        return response()->json($usersArray, 200);
+        return $this->usersModel->getUsers();
     }
 
     /**
@@ -36,19 +40,9 @@ class UsersController extends Controller
         } else {
             $originalName = null;
         }
-        $user = new User();
-        $user->nombre_usuario = $request->nombre_usuario;
-        $user->email = $request->email;
-        $user->password = bcrypt($request->contrasena);
-        $user->estado_usuario = $request->estado_usuario;
-        $user->cedula = $request->cedula;
-        $user->rol = $request->rol;
-        $user->fecha_contratacion = $fechaContratacion;
-        $user->telefono = $request->telefono;
-        $user->avatar = $originalName;
-        $user->save();
+        $user = $this->usersModel->saveUser($request, $originalName, $fechaContratacion);
     
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $this->usersModel->createToken('auth_token')->plainTextToken;
     
         return response()->json([
             'data' => $user,
@@ -85,7 +79,7 @@ class UsersController extends Controller
      */
     public function show($usuario_id)
     {
-        $user = User::find($usuario_id);
+        $user = $this->usersModel->getUser($usuario_id);
         if (!empty($user)) {
             return response()->json($user, 200);
         } else {
@@ -100,60 +94,44 @@ class UsersController extends Controller
      */
     public function update(Request $request, string $usuario_id)
     {
+        // Formatear la fecha de contratación
         $fechaContratacion = Carbon::createFromFormat('d/m/Y', $request->fecha_contratacion)->format('Y-m-d');
-        $users = User::find($usuario_id);
+    
+        // Verificar si hay archivo de avatar para subir
+        $avatar = null;
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
             $uploadPath = "images/profile";
             $originalName = $request->cedula . '_' . $file->getClientOriginalName();
             $file->move($uploadPath, $originalName);
-            $users->avatar = $originalName;
+            $avatar = $originalName;
         }
-        $users->nombre_usuario = $request->nombre_usuario;
-        $users->email = $request->email;
-        if ($request->has('contrasena') && $request->contrasena !== 'undefined') {
-            $users->password = bcrypt($request->contrasena);
-        }
-        $users->estado_usuario = $request->estado_usuario;
-        $users->cedula = $request->cedula;
-        $users->rol = $request->rol;
-        $users->fecha_contratacion = $fechaContratacion;
-        $users->telefono = $request->telefono;
-        $users->save();
+    
+        // Lógica de actualización en el modelo
+        $this->usersModel->updateUser($usuario_id, $request, $fechaContratacion, $avatar);
+    
         return response()->json([
             "message" => "Registro actualizado Correctamente !"
         ]);
     }
+    
+
+
+
     public function updateProfile(Request $request, string $usuario_id)
     {
-        $users = User::find($usuario_id);
+        // Lógica de actualización en el modelo
+        $updateResult = $this->usersModel->updateProfileData($usuario_id, $request);
     
-        // Verifica si el usuario existe
-        if (!$users) {
+        if (!$updateResult) {
             return response()->json(['message' => 'Usuario no encontrado'], 404);
         }
-    
-        // Manejo de la actualización de campos permitidos
-        $fieldsToUpdate = ['nombre_usuario', 'email', 'cedula', 'telefono'];
-    
-        foreach ($fieldsToUpdate as $field) {
-            if ($request->has($field)) {
-                $users->$field = $request->$field;
-            }
-        }
-    
-        // Validación de la contraseña
-        if ($request->has('password') && !empty($request->password)) {
-                $users->password = bcrypt($request->password);
-        }
-    
-        // Guardar cambios
-        $users->save();
     
         return response()->json([
             "message" => "Registro actualizado correctamente!"
         ]);
     }
+    
     
     
     

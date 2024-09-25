@@ -166,40 +166,40 @@ class RoutesModel extends Model
         // Guardar el modelo en la base de datos
         $this->save();
     }
-    public function updateRoute($validatedData, $originalName = null, $fo_viaje_transportadora)
+    public function updateRoute($validatedData, $originalName = null, $fo_viaje_transportadora, $viaje_id)
     {
         // Convertir las fechas al formato adecuado
         $fecha_manifiesto = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_manifiesto']))->format('Y-m-d');
         $fecha_inicio = Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_inicio']))->format('Y-m-d');
-
+        $route = $this->getRoute($viaje_id);
         // Asignar los valores al modelo
-        $this->fo_viaje_usuario = $validatedData['fo_viaje_usuario'];
-        $this->fo_viaje_transportadora = $fo_viaje_transportadora;
-        $this->viaje_num_manifiesto = $validatedData['viaje_num_manifiesto'];
-        $this->viaje_fecha_manifiesto = $fecha_manifiesto;
-        $this->viaje_placa = $validatedData['viaje_placa'];
-        $this->viaje_destino_inicio = $validatedData['viaje_destino_inicio'];
-        $this->viaje_destino_llegada = $validatedData['viaje_destino_llegada'];
-        $this->viaje_fecha_inicio = $fecha_inicio;
-        $this->viaje_km_salida = $validatedData['viaje_km_salida'];
-        $this->viaje_km_llegada = $validatedData['viaje_km_llegada'];
-        $this->viaje_flete = $validatedData['viaje_flete'];
-        $this->viaje_anticipo = $validatedData['viaje_anticipo'];
-        $this->viaje_neto_pago = $validatedData['viaje_neto_pago'];
-        $this->viaje_sobrecosto = $validatedData['viaje_sobrecosto'];
-        $this->viaje_porcentaje_conductor = $validatedData['viaje_porcentaje_conductor'];
-        $this->viaje_total_gastos = $validatedData['viaje_porcentaje_conductor'];
-        $this->viaje_total_ganancias = ($validatedData['viaje_neto_pago'] + $validatedData['viaje_sobrecosto']) - $validatedData['viaje_porcentaje_conductor'];
-        $this->viaje_estatus = $validatedData['viaje_estatus'];
-        $this->viaje_observaciones = $validatedData['viaje_observaciones'];
+        $route->fo_viaje_usuario = $validatedData['fo_viaje_usuario'];
+        $route->fo_viaje_transportadora = $fo_viaje_transportadora;
+        $route->viaje_num_manifiesto = $validatedData['viaje_num_manifiesto'];
+        $route->viaje_fecha_manifiesto = $fecha_manifiesto;
+        $route->viaje_placa = $validatedData['viaje_placa'];
+        $route->viaje_destino_inicio = $validatedData['viaje_destino_inicio'];
+        $route->viaje_destino_llegada = $validatedData['viaje_destino_llegada'];
+        $route->viaje_fecha_inicio = $fecha_inicio;
+        $route->viaje_km_salida = $validatedData['viaje_km_salida'];
+        $route->viaje_km_llegada = $validatedData['viaje_km_llegada'];
+        $route->viaje_flete = $validatedData['viaje_flete'];
+        $route->viaje_anticipo = $validatedData['viaje_anticipo'];
+        $route->viaje_neto_pago = $validatedData['viaje_neto_pago'];
+        $route->viaje_sobrecosto = $validatedData['viaje_sobrecosto'];
+        $route->viaje_porcentaje_conductor = $validatedData['viaje_porcentaje_conductor'];
+        $route->viaje_total_gastos = $validatedData['viaje_porcentaje_conductor'];
+        $route->viaje_total_ganancias = ($validatedData['viaje_neto_pago'] + $validatedData['viaje_sobrecosto']) - $validatedData['viaje_porcentaje_conductor'];
+        $route->viaje_estatus = $validatedData['viaje_estatus'];
+        $route->viaje_observaciones = $validatedData['viaje_observaciones'];
 
         // Actualizar la planilla si se ha proporcionado un archivo nuevo
         if ($originalName !== null) {
-            $this->viaje_planilla = $originalName;
+            $route->viaje_planilla = $originalName;
         }
 
         // Guardar los cambios en la base de datos
-        $this->save();
+        $route->save();
     }
 
     public function updateDataRoute($viaje_id, $validatedData)

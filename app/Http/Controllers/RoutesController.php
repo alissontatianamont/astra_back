@@ -67,7 +67,9 @@ class RoutesController extends Controller
              $originalName = '';
      
              if ($file) {
-                 $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . $validatedData['viaje_fecha_manifiesto'];
+                 // Reemplazar las barras (/) en la fecha por guiones (-)
+                 $formattedDate = str_replace('/', '-', $validatedData['viaje_fecha_manifiesto']);
+                 $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . $formattedDate;
                  $extension = $file->guessExtension();
                  $originalName = $baseName . '.' . $extension;
                  $uploadPath = "spreadsheets";
@@ -91,6 +93,7 @@ class RoutesController extends Controller
              ], 422);
          }
      }
+     
      
 
      
@@ -156,7 +159,10 @@ class RoutesController extends Controller
     
                 // Obtener el tipo de archivo
                 $mimeType = $file->getClientMimeType();
-                $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . Carbon::createFromFormat('d/m/Y', trim($validatedData['viaje_fecha_manifiesto']))->format('Y-m-d');
+                
+                // Reemplazar las barras (/) en la fecha por guiones (-)
+                $formattedDate = str_replace('/', '-', $validatedData['viaje_fecha_manifiesto']);
+                $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . $formattedDate;
     
                 // Definir la carpeta de almacenamiento "spreadsheets"
                 $uploadPath = "spreadsheets";
@@ -185,7 +191,7 @@ class RoutesController extends Controller
             }
     
             // Llamar a la función del modelo para actualizar los datos
-            $this->routeModel->updateRoute($validatedData, $originalName, $request->fo_viaje_transportadora);
+            $this->routeModel->updateRoute($validatedData, $originalName, $request->fo_viaje_transportadora, $viaje_id);
     
             return response()->json([
                 'estatus_update' => 1,
@@ -199,6 +205,7 @@ class RoutesController extends Controller
             ], 422);
         }
     }
+    
     
     
     

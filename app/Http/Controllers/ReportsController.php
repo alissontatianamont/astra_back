@@ -20,6 +20,7 @@ class ReportsController extends Controller
     {
         return $this->reportsModel->getReportsName();
     }
+    
     public function getReport($rep_id, $date_start, $date_end)
     {
         $report = $this->reportsModel->getReport($rep_id);
