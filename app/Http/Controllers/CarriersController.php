@@ -113,17 +113,27 @@ class CarriersController extends Controller
     public function delete($carrier_id)
     {
         $carrier = $this->carriersModel->getCarrier($carrier_id);
+        $validateCarriersRelatedRoutes = $this->carriersModel->validateCarriersRelatedRoutes($carrier_id);
         if ($carrier) {
-            // Actualizar el campo estado_eliminar a 0
-            $carrier->transportadora_estatus = 0;
-            $carrier->save();
+          if($validateCarriersRelatedRoutes == 0){
 
-            return response()->json([
-                "message" => "Registro eliminado con exito"
-            ]);
+              $carrier->transportadora_estatus = 0;
+              $carrier->save();
+  
+              return response()->json([
+                  "message" => "Registro eliminado con exito",
+                  "status" => 1
+              ]);
+          }else{
+                return response()->json([
+                    "message" => "No se puede eliminar la transportadora, tiene viajes asociados.",
+                    "status" => 0
+                ]);
+          }
         } else {
             return response()->json([
-                "message" => "Registro  no encontrado."
+                "message" => "Registro  no encontrado.",
+                "status" => 2
             ], 404);
         }
     }

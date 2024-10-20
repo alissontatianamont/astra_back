@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\RoutesModel;
 
 class CarriersModel extends Model
 {
@@ -22,6 +23,10 @@ class CarriersModel extends Model
         'transportadora_estatus',
     ];
 
+    private $RoutesModel;
+    public function __construct() {
+        $this->RoutesModel = new RoutesModel();
+    }
     public function getCarriers()
     {
         $carriers = CarriersModel::where('transportadora_estatus', 1)->get();
@@ -57,5 +62,14 @@ class CarriersModel extends Model
         $this->transportadora_departamento = $validatedData['transportadora_departamento'];
         $this->transportadora_estatus = $validatedData['transportadora_estatus'];
         $this->save();
+    }
+    public function validateCarriersRelatedRoutes($carrier_id)
+    {
+        $carrier = $this->RoutesModel->where('fo_viaje_transportadora', $carrier_id)->first();
+
+        if ($carrier) {
+            return 1; 
+        } 
+        return 0;
     }
 }

@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Response;
 
 class UsersController extends Controller
 {
@@ -30,20 +29,31 @@ class UsersController extends Controller
      */
     public function store(Request $request)
     {
+        // Formatear la fecha de contratación
         $fechaContratacion = Carbon::createFromFormat('d/m/Y', $request->fecha_contratacion)->format('Y-m-d');
+        
+        // Manejo del archivo avatar
         $file = $request->file("avatar");
+        $originalName = 'default-avatar.png'; // Valor predeterminado en caso de que no se suba imagen
     
         if ($file) {
-            $uploadPath = "images/profile";
+            // Definir la carpeta de almacenamiento
+            $uploadPath = 'profiles';
+    
+            // Generar el nombre del archivo con la cédula y el nombre original del archivo
             $originalName = $request->cedula . '_' . $file->getClientOriginalName();
-            $file->move($uploadPath, $originalName);
-        } else {
-            $originalName = null;
+            
+            // Almacenar el archivo en la carpeta "profiles" dentro de storage/app
+            $file->storeAs($uploadPath, $originalName);
         }
+    
+        // Guardar el usuario en la base de datos
         $user = $this->usersModel->saveUser($request, $originalName, $fechaContratacion);
     
+        // Generar el token de autenticación
         $token = $this->usersModel->createToken('auth_token')->plainTextToken;
     
+        // Responder con los datos del usuario y el token
         return response()->json([
             'data' => $user,
             'message' => "Registro Agregado Correctamente!",
@@ -51,27 +61,29 @@ class UsersController extends Controller
             'token_type' => 'Bearer',
         ]);
     }
+    
 
 
     public function getProfileImage($filename)
     {
-        \Log::info("Acceso a la imagen: " . $filename);
-    
-        $path = public_path('images/profile/' . $filename);
+        $path = storage_path('app/profiles/' . $filename);
     
         if (!File::exists($path)) {
             return response()->json(['message' => 'Imagen no encontrada'], 404);
         }
     
-        // Verificar si el usuario está autenticado
         $user = Auth::user();
     
         if (!$user) {
             return response()->json(['message' => 'No autenticado'], 401);
         }
     
-        return response()->json(['url' => asset('images/profile/' . $filename)], 200);
+        // Devuelve la imagen como un archivo
+        return response()->file($path);
     }
+    
+    
+    
 
 
     /**
@@ -101,9 +113,17 @@ class UsersController extends Controller
         $avatar = null;
         if ($request->hasFile('avatar')) {
             $file = $request->file('avatar');
-            $uploadPath = "images/profile";
+            
+            // Definir la carpeta de almacenamiento en "profiles"
+            $uploadPath = 'profiles';
+            
+            // Generar el nombre del archivo con la cédula y el nombre original del archivo
             $originalName = $request->cedula . '_' . $file->getClientOriginalName();
-            $file->move($uploadPath, $originalName);
+            
+            // Almacenar el archivo en la carpeta "profiles" dentro de storage/app
+            $file->storeAs($uploadPath, $originalName);
+            
+            // Asignar el nombre del archivo almacenado al avatar
             $avatar = $originalName;
         }
     
@@ -114,6 +134,7 @@ class UsersController extends Controller
             "message" => "Registro actualizado Correctamente !"
         ]);
     }
+    
     
 
 
@@ -162,18 +183,28 @@ class UsersController extends Controller
     public function delete($usuario_id)
     {
         $user = User::find($usuario_id);
-        if ($user) {
-            // Actualizar el campo estado_eliminar a 0
-            $user->estado_eliminar = 0;
-            $user->save();
-            
-            return response()->json([
-                "message" => "Registro actualizado correctamente, estado_eliminar set a 0."
-            ]);
+        $findUserRelatedTravels = $this->usersModel->findUserRelatedTravels($usuario_id);
+         if ($user ) {
+            if($findUserRelatedTravels == 0){
+                $user->estado_eliminar = 0;
+                $user->save();
+                
+                return response()->json([
+                    "message" => "Registro actualizado correctamente, estado_eliminar set a 0.",
+                    "status" => 1
+                ]);
+            }else{
+                return response()->json([
+                    "message" => "Usuario no se puede eliminar, tiene viajes asociados.",
+                    "status" => 0
+                ]);
+            }
+           
         } else {
             return response()->json([
-                "message" => "Usuario no encontrado."
-            ], 404);
+                "message" => "Usuario no encontrado y/o no se puede eliminar.",
+                "status" => 2
+            ]);
         }
     }
     public function getDrivers(){

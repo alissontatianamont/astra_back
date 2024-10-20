@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\RoutesModel;
 
 class User extends Authenticatable
 {
@@ -51,8 +52,11 @@ class User extends Authenticatable
         'contrasena' => 'hashed',
     ];
 
+    private $travelsModel;
 
-
+    public function __construct() {
+        $this->travelsModel = new RoutesModel();
+    }
     public function getUsers(){
         $users = $this->where('estado_eliminar', 1)->get();
         $usersArray = $users->toArray();
@@ -131,5 +135,11 @@ public function updateProfileData($usuario_id, $request)
     return true;
 }
 
+
+public function findUserRelatedTravels($usuario_id)
+{
+    $travelCount = $this->travelsModel->where('fo_viaje_usuario', $usuario_id)->count();
+    return $travelCount;
+}
 
 }

@@ -10,6 +10,7 @@ use Illuminate\Validation\ValidationException;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class RoutesController extends Controller
 {
@@ -67,13 +68,14 @@ class RoutesController extends Controller
              $originalName = '';
      
              if ($file) {
-                 // Reemplazar las barras (/) en la fecha por guiones (-)
                  $formattedDate = str_replace('/', '-', $validatedData['viaje_fecha_manifiesto']);
                  $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . $formattedDate;
                  $extension = $file->guessExtension();
                  $originalName = $baseName . '.' . $extension;
-                 $uploadPath = "spreadsheets";
-                 $file->move($uploadPath, $originalName);
+                 $uploadPath = 'spreadsheets';
+                 
+                 // Almacenar el archivo en storage/app/spreadsheets
+                 $file->storeAs($uploadPath, $originalName);
              } else {
                  $originalName = null;
              }
@@ -96,11 +98,6 @@ class RoutesController extends Controller
      
      
 
-     
-     
-     
-     
-    
 
     /**
      * Display the specified resource.
@@ -165,7 +162,7 @@ class RoutesController extends Controller
                 $baseName = "manifiesto_" . $validatedData['viaje_num_manifiesto'] . '_' . $validatedData['viaje_placa'] . '_' . $formattedDate;
     
                 // Definir la carpeta de almacenamiento "spreadsheets"
-                $uploadPath = "spreadsheets";
+                $uploadPath = 'spreadsheets';
                 if (str_starts_with($mimeType, 'image')) {
                     $extension = $file->guessExtension();
                     $originalName = $baseName . '.' . $extension;
@@ -180,14 +177,14 @@ class RoutesController extends Controller
     
                 // Eliminar el archivo antiguo si existe
                 if ($route->viaje_planilla) {
-                    $oldFilePath = public_path($uploadPath . '/' . $route->viaje_planilla);
-                    if (file_exists($oldFilePath)) {
-                        unlink($oldFilePath); // Eliminar archivo antiguo
+                    $oldFilePath = 'spreadsheets/' . $route->viaje_planilla;
+                    if (Storage::exists($oldFilePath)) {
+                        Storage::delete($oldFilePath); // Eliminar archivo antiguo
                     }
                 }
     
-                // Mover el nuevo archivo a la carpeta "spreadsheets"
-                $file->move($uploadPath, $originalName);
+                // Guardar el nuevo archivo en la carpeta "spreadsheets" en storage
+                $file->storeAs($uploadPath, $originalName);
             }
     
             // Llamar a la función del modelo para actualizar los datos
@@ -205,6 +202,7 @@ class RoutesController extends Controller
             ], 422);
         }
     }
+    
     
     
     
@@ -269,15 +267,19 @@ class RoutesController extends Controller
             return response()->json(['message' => 'No autenticado'], 401);
         }
         
-        $path = public_path('spreadsheets/' . $filename);
-        
-        if (!File::exists($path)) {
+        // Definir la ruta en el almacenamiento
+        $path = 'spreadsheets/' . $filename;
+    
+        // Verificar si el archivo existe en el storage
+        if (!Storage::exists($path)) {
             return response()->json(['message' => 'Archivo no encontrado'], 404);
         }
-        
-        return response()->download($path)->setStatusCode(200);
-
+    
+        // Descargar el archivo desde el storage
+        return Storage::download($path);
     }
+    
+    
     public function getDriverName($fo_viaje_usuario)
     {
        $driver = $this->routeModel->getDriverName($fo_viaje_usuario);
@@ -293,6 +295,7 @@ class RoutesController extends Controller
             $route->viaje_fecha_llegada = Carbon::now();
             $route->save();
             return response()->json([
+                "date" => date('Y-m-d H:i:s'),                
                 'message' => 'Viaje finalizado correctamente'
             ]);
         } else {

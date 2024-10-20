@@ -107,7 +107,7 @@ public function updateOrCreateBreakdownEgress($validatedData, $validatedData_ite
 {
     foreach ($validatedData_items as $item) {
         $breakdown_egress = !empty($item->egreso_id) ? self::find($item->egreso_id) : new self();
-
+        $item->fo_egreso_proveedor = ($item->egreso_exogenable == 1) ? $item->fo_egreso_proveedor : null;
         $breakdown_egress->egreso_exogenable = $item->egreso_exogenable;
         $breakdown_egress->egreso_global = $egreso_global;
         $breakdown_egress->fo_egreso_viaje = $validatedData['fo_egreso_viaje'];

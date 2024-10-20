@@ -134,17 +134,26 @@ class ExogenousController extends Controller
     public function delete($exogenous_id)
     {
         $exogenous = $this->exogenousModel->getExogenousById($exogenous_id);
+        $exogenousRelatedEgress = $this->exogenousModel->validateExogenousRelatedEgress($exogenous_id);
         if ($exogenous) {
-            // Actualizar el campo estado_eliminar a 0
-            $exogenous->exogena_estatus = 0;
-            $exogenous->save();
-            
-            return response()->json([
-                "message" => "Registro eliminado exitosamente."
-            ]);
+            if($exogenousRelatedEgress == 0){
+                $exogenous->exogena_estatus = 0;
+                $exogenous->save();
+                
+                return response()->json([
+                    "message" => "Registro eliminado exitosamente.",
+                    "status" => 1
+                ]);
+            }else{
+                return response()->json([
+                    "message" => "No se puede eliminar la exógena porque tiene gastos asociados.",
+                    "status" => 0
+                ]);
+            }
         } else {
             return response()->json([
-                "message" => "viaje  no encontrado."
+                "message" => "viaje  no encontrado.",
+                "status" => 2
             ], 404);
         }
     }

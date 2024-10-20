@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\EgressModel;
 
 class ExogenousModel extends Model
 {
@@ -25,6 +26,10 @@ class ExogenousModel extends Model
         'exogena_tipo',
         'exogena_estatus'
     ];
+    private  $EgressModel;
+    public function __construct() {
+        $this->EgressModel = new EgressModel();
+    }
 
     public function getExogenous()
     {
@@ -77,6 +82,16 @@ class ExogenousModel extends Model
     $exogenous->exogena_tipo = $validatedData['exogena_tipo'];
     $exogenous->exogena_estatus = $validatedData['exogena_estatus'];
     $exogenous->save();
+}
+
+public function validateExogenousRelatedEgress($exogenous_id)
+{
+    $exogenous = $this->EgressModel->where('fo_egreso_proveedor', $exogenous_id)->first();
+
+    if ($exogenous) {
+        return 1; 
+    } 
+    return 0;
 }
 
 }
